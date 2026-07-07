@@ -1,3 +1,4 @@
+// -- UNIFIED FILTER STATES --
 let activeMapType = 'all'; 
 let activeFilterDev = sessionStorage.getItem('activeFilterDev') || null;
 let activeFilterFin = sessionStorage.getItem('activeFilterFin') || null;
@@ -5,10 +6,12 @@ let activeFilterSub = sessionStorage.getItem('activeFilterSub') || null;
 let activeSearchQuery = sessionStorage.getItem('activeSearchQuery') || '';
 let showAllDefault = false;
 
+// --- MAP VARIABLES ---
 let buyerMap;
 let mapClusterGroup;
 let mapMarkers = {};
 
+// --- INITIALIZE BUYER MAP ---
 function initBuyerMap() {
     const centerLat = 14.3345; 
     const centerLng = 120.9028;
@@ -76,6 +79,7 @@ function initBuyerMap() {
     });
 }
 
+// --- MAP FILTER LOGIC ---
 function setMapFilter(type) {
     activeMapType = type;
     document.querySelectorAll('.map-filter-btn').forEach(btn => {
@@ -109,6 +113,7 @@ function updateMapMarkers(filteredItems) {
     }
 }
 
+// --- ADVANCED FILTER INITIALIZATION ---
 function initAdvancedFilters() {
     const locSelect = document.getElementById('advSearchLocation');
     const typeSelect = document.getElementById('advSearchType');
@@ -135,16 +140,37 @@ function initAdvancedFilters() {
     if(activeFilterSub) document.getElementById('subBtnLabel').innerText = activeFilterSub;
 }
 
+// --- QUICK SEARCH ---
 function quickSearch(term) {
     document.getElementById('advSearchKeyword').value = term;
     runAdvancedSearch();
 }
 
+// --- RUN ADVANCED SEARCH ---
 function runAdvancedSearch() {
     hideAllMenus();
     
     activeSearchQuery = document.getElementById('advSearchKeyword').value.trim().toLowerCase();
     const locVal = document.getElementById('advSearchLocation').value;
+    
+    if (locVal !== '') { 
+        window.location.href = 'city.php?location=' + encodeURIComponent(locVal); 
+        return; 
+    }
+
+    if (activeSearchQuery !== '') {
+        let knownLocations = [];
+        allProperties.forEach(p => {
+            if(p.city && p.city.trim() !== '') knownLocations.push(p.city.trim());
+            if(p.province && p.province.trim() !== '') knownLocations.push(p.province.trim());
+        });
+        knownLocations = [...new Set(knownLocations)].sort((a,b) => b.length - a.length);
+        let matchedLocation = knownLocations.find(l => activeSearchQuery === l.toLowerCase() || activeSearchQuery.includes(l.toLowerCase()));
+        if (matchedLocation) { 
+            window.location.href = 'city.php?location=' + encodeURIComponent(matchedLocation); 
+            return; 
+        }
+    }
     
     const typeVal = document.getElementById('advSearchType').value;
     const priceVal = document.getElementById('advSearchPrice').value;
@@ -161,6 +187,7 @@ function runAdvancedSearch() {
     applyFilters(true);
 }
 
+// --- RESET ADVANCED FILTERS UI ONLY ---
 function resetAdvancedFiltersUI() {
     document.getElementById('advSearchKeyword').value = '';
     document.getElementById('advSearchLocation').value = '';
@@ -172,6 +199,7 @@ function resetAdvancedFiltersUI() {
     sessionStorage.removeItem('advPrice');
 }
 
+// --- SCROLL ANIMATION OBSERVER ---
 const scrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) { entry.target.classList.add('is-visible'); }
@@ -182,12 +210,14 @@ function observeElements() {
     document.querySelectorAll('.reveal-on-scroll').forEach(el => scrollObserver.observe(el));
 }
 
+// --- STICKY NAV SCROLL LOGIC ---
 window.addEventListener('scroll', function() {
     const nav = document.getElementById('mainNav');
     if (window.scrollY > 10) { nav.classList.add('nav-scrolled'); } 
     else { nav.classList.remove('nav-scrolled'); }
 });
 
+// --- DYNAMIC TYPEWRITER EFFECT ---
 const typewriterWords = ["House & Lot", "Farm Lots  ", "Condominiums", "Memorial Lots"];
 let twWordIndex = 0; let twCharIndex = 0; let twIsDeleting = false;
 let heroSlideIndex = 0;
@@ -241,9 +271,11 @@ function runTypewriter() {
     setTimeout(runTypewriter, typeSpeed);
 }
 
+// --- SLIDER STATES ---
 let currentImages = [];
 let currentSlide = 0;
 
+// --- MOBILE MENU FUNCTIONS ---
 function openMobileMenu() {
     document.getElementById('mobileMenuOverlay').classList.remove('hidden');
     setTimeout(() => {
@@ -269,6 +301,7 @@ function closeMobileMenu() {
     }, 500);
 }
 
+// --- AUTH & MODAL FUNCTIONS ---
 function goToStep2() {
     const name = document.getElementById('fullname').value.trim();
     const username = document.getElementById('username').value.trim();
@@ -335,6 +368,7 @@ function togglePortal(e) {
     }
 }
 
+// --- UNIFIED FILTERING SYSTEM FOR DIRECTORY UI ---
 function filterByDeveloper(dev) {
     hideAllMenus();
     activeFilterDev = dev === 'All' ? null : dev;
@@ -406,6 +440,7 @@ function resetAndScroll() {
     document.getElementById('finBtnLabel').innerText = 'Financing';
     document.getElementById('subBtnLabel').innerText = 'Subdivision';
     
+    // Reset Map Buttons
     activeMapType = 'all';
     document.querySelectorAll('.map-filter-btn').forEach(btn => {
         if (btn.dataset.type === 'all') {
@@ -473,6 +508,7 @@ function applyFilters(scrollToGrid = false) {
             } else { matches = false; }
         }
 
+        // Map Interactive Filters integration
         if (activeMapType !== 'all') {
             let hType = (p.house_type || '').toLowerCase();
             let isCondo = hType.includes('condo');
@@ -572,6 +608,7 @@ function render(items, isFiltered = true) {
     observeElements();
 }
 
+// --- NEW: DYNAMIC FINANCING HANDLING FOR FRONTEND MODAL ---
 function updateDynamicFinancing() {
     const select = document.getElementById('dynamicFinancingSelect');
     if(!select || !select.options.length) return;
@@ -579,6 +616,7 @@ function updateDynamicFinancing() {
     document.getElementById('detailGmi').innerText = selected.getAttribute('data-gmi') || 'N/A';
 }
 
+// --- SINGLE PROPERTY MODAL LOGIC (Compact View) ---
 function showPropertyDetails(id) {
     const prop = allProperties.find(p => p.id == id);
     if (!prop) return;
@@ -645,6 +683,7 @@ function showPropertyDetails(id) {
     updateCarousel();
 }
 
+// --- CAROUSEL LOGIC ---
 function updateCarousel() {
     const container = document.getElementById('carouselContainer');
     container.innerHTML = currentImages.map((src, index) => {
@@ -689,6 +728,7 @@ window.goToSlide = function(index) {
     updateCarousel();
 };
 
+// --- VIRTUAL TOUR HELPER ---
 function openVirtualTour(e, url) {
     if(e) e.stopPropagation();
     
